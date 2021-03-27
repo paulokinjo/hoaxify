@@ -1,5 +1,6 @@
 import React from 'react';
 import Input from '../components/input';
+import ButtonWithProgress from '../components/ButtonWithProgress';
 
 export class UserSignupPage extends React.Component {
   state = {
@@ -7,7 +8,7 @@ export class UserSignupPage extends React.Component {
     username: '',
     password: '',
     passwordRepeat: '',
-    peddingApiCall: false,
+    pendingApiCall: false,
     errors: {},
     passwordRepeatConfirmed: true,
   };
@@ -54,11 +55,11 @@ export class UserSignupPage extends React.Component {
       password: this.state.password,
     };
 
-    this.setState({ peddingApiCall: true });
+    this.setState({ pendingApiCall: true });
     this.props.actions
       .postSignup(user)
       .then((response) => {
-        this.setState({ peddingApiCall: false });
+        this.setState({ pendingApiCall: false });
       })
       .catch((apiError) => {
         let errors = { ...this.state.errors };
@@ -67,7 +68,7 @@ export class UserSignupPage extends React.Component {
           errors = { ...apiError.response.data.validationErrors };
         }
 
-        this.setState({ peddingApiCall: false, errors });
+        this.setState({ pendingApiCall: false, errors });
       });
   };
 
@@ -118,23 +119,14 @@ export class UserSignupPage extends React.Component {
           />
         </div>
         <div className="text-center">
-          <button
-            className="btn btn-primary"
+          <ButtonWithProgress
             onClick={this.onClickSignup}
             disabled={
-              this.state.peddingApiCall || !this.state.passwordRepeatConfirmed
+              this.state.pendingApiCall || !this.state.passwordRepeatConfirmed
             }
-          >
-            {this.state.peddingApiCall && (
-              <div
-                className="spinner-border text-light spinner-border-sm mr-sm-1"
-                role="status"
-              >
-                <span className="sr-only">Loading...</span>
-              </div>
-            )}
-            Sign Up
-          </button>
+            pendingApiCall={this.state.pendingApiCall}
+            text="Sign Up"
+          />
         </div>
       </div>
     );

@@ -2,11 +2,17 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
-import { UserSignupPage } from './pages/UserSignupPage';
+import { LoginPage } from './pages/LoginPage';
+
+import * as apiCalls from './api/apiCalls';
+
+const actions = {
+  postLogin: apiCalls.login,
+};
 
 ReactDOM.render(
   <React.StrictMode>
-    <UserSignupPage />
+    <LoginPage actions={actions} />
   </React.StrictMode>,
   document.getElementById('root')
 );
