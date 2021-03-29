@@ -1,19 +1,15 @@
+import './index.css';
+
+import App from './containers/App';
+import { HashRouter } from 'react-router-dom';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
 import reportWebVitals from './reportWebVitals';
-import { LoginPage } from './pages/LoginPage';
-
-import * as apiCalls from './api/apiCalls';
-
-const actions = {
-  postLogin: apiCalls.login,
-};
 
 ReactDOM.render(
-  <React.StrictMode>
-    <LoginPage actions={actions} />
-  </React.StrictMode>,
+  <HashRouter>
+    <App />
+  </HashRouter>,
   document.getElementById('root')
 );
 

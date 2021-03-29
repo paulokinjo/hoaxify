@@ -1,6 +1,7 @@
-import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, render, waitFor } from '@testing-library/react';
+
 import { LoginPage } from './LoginPage';
+import React from 'react';
 
 describe('LoginPage', () => {
   describe('Layout', () => {
@@ -265,6 +266,21 @@ describe('LoginPage', () => {
       const spinner = queryByText('Loading...');
 
       await waitFor(() => expect(spinner).not.toBeInTheDocument());
+    });
+
+    it('redirects to homepage after successful login', async () => {
+      const actions = {
+        postLogin: jest.fn().mockResolvedValue({}),
+      };
+
+      const history = {
+        push: jest.fn(),
+      };
+
+      setupForSubmit({ actions, history });
+      fireEvent.click(button);
+
+      await waitFor(() => expect(history.push).toHaveBeenCalledWith('/'));
     });
   });
 });

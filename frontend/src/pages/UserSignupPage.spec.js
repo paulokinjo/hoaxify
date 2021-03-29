@@ -1,6 +1,8 @@
+import { fireEvent, render, waitFor } from '@testing-library/react';
+
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react';
 import { UserSignupPage } from './UserSignupPage';
+
 describe('UserSignupPage', () => {
   describe('Layout', () => {
     it('has header of Sign Up', () => {
@@ -354,6 +356,21 @@ describe('UserSignupPage', () => {
 
       const displayErrorMessage = queryByText(errorMessage);
       expect(displayErrorMessage).not.toBeInTheDocument();
+    });
+
+    it('redirects to homepage after successful signup', async () => {
+      const actions = {
+        postSignup: jest.fn().mockResolvedValue({}),
+      };
+
+      const history = {
+        push: jest.fn(),
+      };
+
+      setupForSubmit({ actions, history });
+      fireEvent.click(button);
+
+      await waitFor(() => expect(history.push).toHaveBeenCalledWith('/'));
     });
   });
 });

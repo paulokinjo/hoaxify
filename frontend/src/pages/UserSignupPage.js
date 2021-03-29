@@ -1,6 +1,6 @@
-import React from 'react';
-import Input from '../components/input';
 import ButtonWithProgress from '../components/ButtonWithProgress';
+import Input from '../components/input';
+import React from 'react';
 
 export class UserSignupPage extends React.Component {
   state = {
@@ -59,7 +59,9 @@ export class UserSignupPage extends React.Component {
     this.props.actions
       .postSignup(user)
       .then((response) => {
-        this.setState({ pendingApiCall: false });
+        this.setState({ pendingApiCall: false }, () => {
+          this.props.history.push('/');
+        });
       })
       .catch((apiError) => {
         let errors = { ...this.state.errors };
@@ -76,7 +78,7 @@ export class UserSignupPage extends React.Component {
     return (
       <div className="container">
         <h1 className="text-center">Sign Up</h1>
-        <div className="col-12 mb-3">
+        <div>
           <Input
             label="Display Name"
             placeholder="Your display name"
@@ -139,6 +141,9 @@ UserSignupPage.defaultProps = {
       new Promise((resolve, reject) => {
         resolve({});
       }),
+  },
+  history: {
+    push: () => {},
   },
 };
 

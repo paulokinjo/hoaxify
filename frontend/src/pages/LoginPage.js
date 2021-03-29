@@ -1,6 +1,6 @@
-import React from 'react';
-import Input from '../components/input';
 import ButtonWithProgress from '../components/ButtonWithProgress';
+import Input from '../components/input';
+import React from 'react';
 
 export class LoginPage extends React.Component {
   state = {
@@ -37,7 +37,9 @@ export class LoginPage extends React.Component {
     this.props.actions
       .postLogin(body)
       .then((response) => {
-        this.setState({ pendingApiCall: false });
+        this.setState({ pendingApiCall: false }, () => {
+          this.props.history.push('/');
+        });
       })
       .catch((error) => {
         if (error.response) {
