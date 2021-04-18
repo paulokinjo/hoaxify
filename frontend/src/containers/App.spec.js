@@ -284,3 +284,5 @@ describe('App', () => {
     expect(axiosAuthorization).toBeFalsy();
   });
 });
+
+console.error = () => {};
