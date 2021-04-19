@@ -7,6 +7,17 @@ import React from 'react';
 import axios from 'axios';
 import configureStore from '../redux/configureStore';
 
+import * as apiCalls from '../api/apiCalls';
+
+apiCalls.getUser = jest.fn().mockResolvedValue({
+  data: {
+    id: 1,
+    username: 'user1',
+    displayName: 'display1',
+    image: 'profile1.png',
+  },
+});
+
 const setup = (path) => {
   const store = configureStore(false);
   return render(
@@ -18,12 +29,45 @@ const setup = (path) => {
   );
 };
 
+const user1 = {
+  id: 1,
+  username: 'user1',
+  displayName: 'display1',
+  image: 'profile1.png',
+  password: 'P4ssword',
+  isLoggedIn: true,
+};
+const setUserOneLoggedInStorage = () => {
+  localStorage.setItem('hoax-auth', JSON.stringify(user1));
+};
+
 const changeEvent = (content) => {
   return {
     target: {
       value: content,
     },
   };
+};
+
+const mockSuccessGetUser1 = {
+  data: user1,
+};
+
+const mockSuccessGetUser2 = {
+  data: {
+    id: 2,
+    username: 'user2',
+    displayName: 'display2',
+    image: 'profile2',
+  },
+};
+
+const mockFailGetUser = {
+  response: {
+    data: {
+      message: 'User not found',
+    },
+  },
 };
 
 beforeEach(() => {
@@ -119,12 +163,7 @@ describe('App', () => {
     const button = container.querySelector('button');
 
     axios.post = jest.fn().mockResolvedValue({
-      data: {
-        id: 1,
-        username: 'user1',
-        displayName: 'display1',
-        image: 'profile1.png',
-      },
+      data: user1,
     });
 
     fireEvent.click(button);
@@ -154,12 +193,7 @@ describe('App', () => {
         },
       })
       .mockResolvedValueOnce({
-        data: {
-          id: 1,
-          username: 'user1',
-          displayName: 'display1',
-          image: 'profile1',
-        },
+        data: user1,
       });
     fireEvent.click(button);
 
@@ -175,12 +209,7 @@ describe('App', () => {
 
     const button = container.querySelector('button');
     axios.post = jest.fn().mockResolvedValue({
-      data: {
-        id: 1,
-        username: 'user1',
-        displayName: 'display1',
-        image: 'profile1.png',
-      },
+      data: user1,
     });
 
     fireEvent.click(button);
@@ -188,28 +217,11 @@ describe('App', () => {
     await waitFor(() => queryByText('My Profile'));
 
     const dataInStorage = JSON.parse(localStorage.getItem('hoax-auth'));
-    expect(dataInStorage).toEqual({
-      id: 1,
-      username: 'user1',
-      displayName: 'display1',
-      image: 'profile1.png',
-      password: 'P4ssword',
-      isLoggedIn: true,
-    });
+    expect(dataInStorage).toEqual({ ...user1, isLoggedIn: true });
   });
 
   it('displays logged in topBar when storage has logged in user data', () => {
-    localStorage.setItem(
-      'hoax-auth',
-      JSON.stringify({
-        id: 1,
-        username: 'user1',
-        displayName: 'display1',
-        image: 'profile1.png',
-        password: 'P4ssword',
-        isLoggedIn: true,
-      })
-    );
+    setUserOneLoggedInStorage();
 
     const { queryByText } = setup('/');
     const myProfileLink = queryByText('My Profile');
@@ -225,12 +237,7 @@ describe('App', () => {
 
     const button = container.querySelector('button');
     axios.post = jest.fn().mockResolvedValue({
-      data: {
-        id: 1,
-        username: 'user1',
-        displayName: 'display1',
-        image: 'profile1.png',
-      },
+      data: user1,
     });
 
     fireEvent.click(button);
@@ -244,17 +251,7 @@ describe('App', () => {
   });
 
   it('sets axios authorization with base64 encoded user credentials when storage has logged in user', async () => {
-    localStorage.setItem(
-      'hoax-auth',
-      JSON.stringify({
-        id: 1,
-        username: 'user1',
-        displayName: 'display1',
-        image: 'profile1.png',
-        password: 'P4ssword',
-        isLoggedIn: true,
-      })
-    );
+    setUserOneLoggedInStorage();
 
     setup('/');
     const axiosAuthorization = axios.defaults.headers.common['Authorization'];
@@ -264,17 +261,7 @@ describe('App', () => {
   });
 
   it('removes axios authorization header when user logout', async () => {
-    localStorage.setItem(
-      'hoax-auth',
-      JSON.stringify({
-        id: 1,
-        username: 'user1',
-        displayName: 'display1',
-        image: 'profile1.png',
-        password: 'P4ssword',
-        isLoggedIn: true,
-      })
-    );
+    setUserOneLoggedInStorage();
 
     const { queryByText } = setup('/');
     fireEvent.click(queryByText('Logout'));
@@ -282,6 +269,44 @@ describe('App', () => {
     const axiosAuthorization = axios.defaults.headers.common['Authorization'];
 
     expect(axiosAuthorization).toBeFalsy();
+  });
+
+  it('updates user page after clicking my profile when another user page was opened', async () => {
+    apiCalls.getUser = jest
+      .fn()
+      .mockResolvedValueOnce(mockSuccessGetUser2)
+      .mockResolvedValueOnce(mockSuccessGetUser1);
+
+    setUserOneLoggedInStorage();
+
+    const { findByText, queryByText } = setup('/user2');
+
+    await findByText('display2@user2');
+
+    const myProfileLink = queryByText('My Profile');
+    fireEvent.click(myProfileLink);
+
+    const user1Info = await findByText('display1@user1');
+    expect(user1Info).toBeInTheDocument();
+  });
+
+  it('updates user page after clicking my profile when another no existing user page was opened', async () => {
+    apiCalls.getUser = jest
+      .fn()
+      .mockRejectedValueOnce(mockFailGetUser)
+      .mockResolvedValueOnce(mockSuccessGetUser1);
+
+    setUserOneLoggedInStorage();
+
+    const { findByText, queryByText } = setup('/user50');
+
+    await findByText('User not found');
+
+    const myProfileLink = queryByText('My Profile');
+    fireEvent.click(myProfileLink);
+
+    const user1Info = await findByText('display1@user1');
+    expect(user1Info).toBeInTheDocument();
   });
 });
 

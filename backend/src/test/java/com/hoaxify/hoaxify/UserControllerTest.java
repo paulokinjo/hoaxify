@@ -406,7 +406,7 @@ public class UserControllerTest {
 	}
 	
 	@Test
-	public void getUserByUsername_whenUserDoesNotExist_receiveNApiError() {
+	public void getUserByUsername_whenUserDoesNotExist_receiveApiError() {
 		ResponseEntity<ApiError> response = getUser("unknown-user", ApiError.class);
 		assertThat(response.getBody().getMessage().contains("unknown-user")).isTrue();
 	}

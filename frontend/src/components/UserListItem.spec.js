@@ -2,7 +2,6 @@ import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 import UserListItem from './UserListItem';
 import { render } from '@testing-library/react';
-
 const user = {
   username: 'user1',
   displayName: 'display1',
