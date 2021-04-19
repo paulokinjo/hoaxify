@@ -9,6 +9,17 @@ import React from 'react';
 import axios from 'axios';
 import configureStore from '../redux/configureStore';
 
+import * as apiCalls from '../api/apiCalls';
+
+apiCalls.getUser = jest.fn().mockResolvedValue({
+  data: {
+    id: 1,
+    username: 'user1',
+    displayName: 'display1',
+    image: 'profile1.png',
+  },
+});
+
 const setup = (path) => {
   const store = configureStore(false);
   return render(
@@ -18,6 +29,18 @@ const setup = (path) => {
       </MemoryRouter>
     </Provider>
   );
+};
+
+const user1 = {
+  id: 1,
+  username: 'user1',
+  displayName: 'display1',
+  image: 'profile1.png',
+  password: 'P4ssword',
+  isLoggedIn: true,
+};
+const setUserOneLoggedInStorage = () => {
+  localStorage.setItem('hoax-auth', JSON.stringify(user1));
 };
 
 const changeEvent = (content) => {
@@ -169,12 +192,7 @@ describe('App', () => {
     const button = container.querySelector('button');
 
     axios.post = jest.fn().mockResolvedValue({
-      data: {
-        id: 1,
-        username: 'user1',
-        displayName: 'display1',
-        image: 'profile1.png',
-      },
+      data: user1,
     });
 
     fireEvent.click(button);
@@ -204,12 +222,7 @@ describe('App', () => {
         },
       })
       .mockResolvedValueOnce({
-        data: {
-          id: 1,
-          username: 'user1',
-          displayName: 'display1',
-          image: 'profile1',
-        },
+        data: user1,
       });
     fireEvent.click(button);
 
@@ -225,12 +238,7 @@ describe('App', () => {
 
     const button = container.querySelector('button');
     axios.post = jest.fn().mockResolvedValue({
-      data: {
-        id: 1,
-        username: 'user1',
-        displayName: 'display1',
-        image: 'profile1.png',
-      },
+      data: user1,
     });
 
     fireEvent.click(button);
@@ -238,14 +246,7 @@ describe('App', () => {
     await waitFor(() => queryByText('My Profile'));
 
     const dataInStorage = JSON.parse(localStorage.getItem('hoax-auth'));
-    expect(dataInStorage).toEqual({
-      id: 1,
-      username: 'user1',
-      displayName: 'display1',
-      image: 'profile1.png',
-      password: 'P4ssword',
-      isLoggedIn: true,
-    });
+    expect(dataInStorage).toEqual({ ...user1, isLoggedIn: true });
   });
 
   it('displays logged in topBar when storage has logged in user data', () => {
@@ -265,12 +266,7 @@ describe('App', () => {
 
     const button = container.querySelector('button');
     axios.post = jest.fn().mockResolvedValue({
-      data: {
-        id: 1,
-        username: 'user1',
-        displayName: 'display1',
-        image: 'profile1.png',
-      },
+      data: user1,
     });
 
     fireEvent.click(button);

@@ -2,6 +2,8 @@ import * as apiCalls from '../api/apiCalls';
 
 import ProfileCard from '../components/ProfileCard';
 import React from 'react';
+import * as apiCalls from '../api/apiCalls';
+import ProfileCard from '../components/ProfileCard';
 
 class UserPage extends React.Component {
   state = {
