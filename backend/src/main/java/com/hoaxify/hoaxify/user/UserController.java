@@ -11,6 +11,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+<<<<<<< HEAD
+=======
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+>>>>>>> 37f9ca95a8fef0f63ce300a9530e31f10492e245
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -32,6 +37,20 @@ public class UserController {
 		return new GenericResponse("User saved");
 	}
 
+<<<<<<< HEAD
+=======
+	@GetMapping("/users")
+	Page<UserVM> getUsers(@CurrentUser User loggedInUser, Pageable page) {
+		return userService.getUsers(loggedInUser, page).map(UserVM::new);
+	}
+	
+	@GetMapping("/users/{username}")
+	UserVM getUserByName(@PathVariable String username) {
+		User user = userService.getByUsername(username);
+		return new UserVM(user);
+	}
+
+>>>>>>> 37f9ca95a8fef0f63ce300a9530e31f10492e245
 	@ExceptionHandler({ MethodArgumentNotValidException.class })
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	ApiError handleValidationException(MethodArgumentNotValidException exception, HttpServletRequest request) {
