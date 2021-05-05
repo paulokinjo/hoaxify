@@ -9,8 +9,6 @@ import React from 'react';
 import axios from 'axios';
 import configureStore from '../redux/configureStore';
 
-import * as apiCalls from '../api/apiCalls';
-
 apiCalls.getUser = jest.fn().mockResolvedValue({
   data: {
     id: 1,
@@ -38,9 +36,6 @@ const user1 = {
   image: 'profile1.png',
   password: 'P4ssword',
   isLoggedIn: true,
-};
-const setUserOneLoggedInStorage = () => {
-  localStorage.setItem('hoax-auth', JSON.stringify(user1));
 };
 
 const changeEvent = (content) => {

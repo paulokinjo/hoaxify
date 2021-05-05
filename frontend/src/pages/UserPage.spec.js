@@ -1,8 +1,12 @@
 import * as apiCalls from '../api/apiCalls';
 
+import { fireEvent, render, waitFor } from '@testing-library/react';
+
+import { Provider } from 'react-redux';
 import React from 'react';
 import UserPage from './UserPage';
-import { render } from '@testing-library/react';
+import axios from 'axios';
+import configureStore from '../redux/configureStore';
 
 const mockSuccessGetUser = {
   data: {
@@ -13,14 +17,46 @@ const mockSuccessGetUser = {
   },
 };
 
+const mockSuccessUpdateUser = {
+  data: {
+    ...mockSuccessGetUser.data,
+    displayName: 'display1-update',
+    image: 'profile1-update.png',
+  },
+};
+
 const match = {
   params: {
     username: 'user1',
   },
 };
 
+beforeEach(() => {
+  localStorage.clear();
+  delete axios.defaults.headers.common['Authorization'];
+});
+
 const setup = (props) => {
-  return render(<UserPage {...props} />);
+  const store = configureStore(false);
+  return render(
+    <Provider store={store}>
+      <UserPage {...props} />
+    </Provider>
+  );
+};
+
+const setUserOneLoggedInStorage = () => {
+  localStorage.setItem(
+    'hoax-auth',
+    JSON.stringify({
+      id: 1,
+      username: 'user1',
+      displayName: 'display1',
+      image: 'profile1.png',
+      password: 'P4ssword',
+      isLoggedIn: true,
+    })
+  );
 };
 
 const mockFailGetUser = {
@@ -30,6 +66,13 @@ const mockFailGetUser = {
     },
   },
 };
+
+const mockFailUpdateUser = {
+  response: {
+    data: {},
+  },
+};
+
 describe('UserPage', () => {
   describe('Layout', () => {
     it('has root page div', () => {
@@ -66,6 +109,15 @@ describe('UserPage', () => {
       const spinner = queryByText('Loading...');
       expect(spinner).toBeInTheDocument();
     });
+
+    it('displays the edit button when loggedInUser matches to user in url', async () => {
+      setUserOneLoggedInStorage();
+      apiCalls.getUser = jest.fn().mockResolvedValue(mockSuccessGetUser);
+      const { queryByText } = setup({ match });
+      await waitFor(() => queryByText('display1@user1'));
+      const editButton = queryByText('Edit');
+      expect(editButton).toBeInTheDocument();
+    });
   });
 
   describe('Lifecycle', () => {
@@ -79,6 +131,182 @@ describe('UserPage', () => {
       apiCalls.getUser = jest.fn().mockResolvedValue(mockSuccessGetUser);
       setup({ match });
       expect(apiCalls.getUser).toHaveBeenCalledWith('user1');
+    });
+  });
+
+  describe('ProfileCard Interactions', () => {
+    const mockDelayedUpdateSuccess = () => {
+      return jest.fn().mockImplementation(() => {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve(mockSuccessGetUser);
+          }, 300);
+        });
+      });
+    };
+
+    const setupForEdit = async () => {
+      setUserOneLoggedInStorage();
+      apiCalls.getUser = jest.fn().mockResolvedValue(mockSuccessGetUser);
+      const rendered = setup({ match });
+      await waitFor(() => fireEvent.click(rendered.queryByText('Edit')));
+      return rendered;
+    };
+
+    it('displays edit layout when cl icking edit button', async () => {
+      const { queryByText } = await setupForEdit();
+      expect(queryByText('Save')).toBeInTheDocument();
+    });
+
+    it('returns back to none edit mode after clicking cancel', async () => {
+      const { queryByText } = await setupForEdit();
+
+      const cancelButton = queryByText('Cancel');
+      fireEvent.click(cancelButton);
+
+      expect(queryByText('Edit')).toBeInTheDocument();
+    });
+
+    it('calls update user api when clicking save', async () => {
+      const { queryByText } = await setupForEdit();
+      apiCalls.updateUser = jest.fn().mockResolvedValue(mockSuccessUpdateUser);
+
+      const saveButton = queryByText('Save');
+      fireEvent.click(saveButton);
+
+      expect(apiCalls.updateUser).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls updateUser api with user id', async () => {
+      const { queryByText } = await setupForEdit();
+      apiCalls.updateUser = jest.fn().mockResolvedValue(mockSuccessUpdateUser);
+
+      const saveButton = queryByText('Save');
+      fireEvent.click(saveButton);
+
+      const userId = apiCalls.updateUser.mock.calls[0][0];
+
+      expect(userId).toBe(1);
+    });
+
+    it('calls updateUser api with request body having changed displayName', async () => {
+      const { queryByText, container } = await setupForEdit();
+      apiCalls.updateUser = jest.fn().mockResolvedValue(mockSuccessUpdateUser);
+
+      const displayInput = container.querySelector('input');
+      fireEvent.change(displayInput, { target: { value: 'display1-update' } });
+
+      const saveButton = queryByText('Save');
+      fireEvent.click(saveButton);
+
+      const requestBody = apiCalls.updateUser.mock.calls[0][1];
+
+      expect(requestBody.displayName).toBe('display1-update');
+    });
+
+    it('returns to non edit mode after successful updateUser api call', async () => {
+      const { queryByText } = await setupForEdit();
+      apiCalls.updateUser = jest.fn().mockResolvedValue(mockSuccessUpdateUser);
+
+      const saveButton = queryByText('Save');
+      fireEvent.click(saveButton);
+
+      await waitFor(() => expect(queryByText('Edit')).toBeInTheDocument());
+    });
+
+    it('returns to original displayName after its changed in edit mode but cancelled', async () => {
+      const { queryByText, container } = await setupForEdit();
+      const displayInput = container.querySelector('input');
+      fireEvent.change(displayInput, { target: { value: 'display1-update' } });
+
+      await waitFor(() => fireEvent.click(queryByText('Cancel')));
+
+      await waitFor(() =>
+        expect(queryByText('display1@user1')).toBeInTheDocument()
+      );
+    });
+
+    it('returns to last updated displayName when display name is changed for another time but cancelled', async () => {
+      const { queryByText, container } = await setupForEdit();
+      let displayInput = container.querySelector('input');
+      fireEvent.change(displayInput, { target: { value: 'display1-update' } });
+      apiCalls.updateUser = jest.fn().mockResolvedValue(mockSuccessUpdateUser);
+
+      const saveButton = queryByText('Save');
+      fireEvent.click(saveButton);
+
+      await waitFor(() => fireEvent.click(queryByText('Edit')));
+
+      displayInput = container.querySelector('input');
+      fireEvent.change(displayInput, {
+        target: { value: 'display1-update-second-time' },
+      });
+
+      await waitFor(() => fireEvent.click(queryByText('Cancel')));
+
+      const lastSavedData = container.querySelector('h4');
+
+      expect(lastSavedData).toHaveTextContent('display1-update@user1');
+    });
+
+    it('displays spinner when there is updateUser api call', async () => {
+      const { queryByText } = await setupForEdit();
+      apiCalls.updateUser = mockDelayedUpdateSuccess();
+
+      const saveButton = queryByText('Save');
+      fireEvent.click(saveButton);
+
+      const spinner = queryByText('Loading...');
+      expect(spinner).toBeInTheDocument();
+    });
+
+    it('disables save button when there is updateUser api call', async () => {
+      const { queryByText } = await setupForEdit();
+      apiCalls.updateUser = mockDelayedUpdateSuccess();
+
+      const saveButton = queryByText('Save');
+      fireEvent.click(saveButton);
+
+      expect(saveButton).toBeDisabled();
+    });
+
+    it('disables cancel button when there is updateUser api call', async () => {
+      const { queryByText } = await setupForEdit();
+      apiCalls.updateUser = mockDelayedUpdateSuccess();
+
+      const saveButton = queryByText('Save');
+      fireEvent.click(saveButton);
+
+      const cancelButton = queryByText('Cancel');
+
+      expect(cancelButton).toBeDisabled();
+    });
+
+    it('enables save button after updateUser api call success', async () => {
+      const { queryByText, container } = await setupForEdit();
+      let displayInput = container.querySelector('input');
+      fireEvent.change(displayInput, { target: { value: 'display1-update' } });
+      apiCalls.updateUser = jest.fn().mockResolvedValue(mockSuccessUpdateUser);
+
+      const saveButton = queryByText('Save');
+      fireEvent.click(saveButton);
+
+      await waitFor(() => fireEvent.click(queryByText('Edit')));
+
+      const saveButtonAfterSecondEdit = queryByText('Save');
+      expect(saveButtonAfterSecondEdit).not.toBeDisabled();
+    });
+
+    it('enables save button after updateUser api call fails', async () => {
+      const { queryByText, container } = await setupForEdit();
+      let displayInput = container.querySelector('input');
+      fireEvent.change(displayInput, { target: { value: 'display1-update' } });
+      apiCalls.updateUser = jest.fn().mockRejectedValue(mockFailUpdateUser);
+
+      const saveButton = queryByText('Save');
+      fireEvent.click(saveButton);
+
+      await waitFor(() => expect(saveButton).not.toBeDisabled());
     });
   });
 });

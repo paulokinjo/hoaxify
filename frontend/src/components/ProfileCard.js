@@ -1,6 +1,20 @@
-import React from 'react';
+import ButtonWithProgress from './ButtonWithProgress';
+import Input from './input';
 import ProfileImageWithDefault from './ProfileImageWithDefault';
-const ProfileCard = ({ user }) => {
+import React from 'react';
+
+const ProfileCard = ({
+  user,
+  isEditable,
+  inEditMode,
+  onClickEdit,
+  onClickCancel,
+  onClickSave,
+  onChangeDisplayName,
+  pendingUpdateCall,
+}) => {
+  const showEditButton = isEditable && !inEditMode;
+
   return (
     <div className="card">
       <div className="card-header text-center">
@@ -13,7 +27,44 @@ const ProfileCard = ({ user }) => {
         />
       </div>
       <div className="card-body text-center">
-        <h4>{`${user.displayName}@${user.username}`}</h4>
+        {!inEditMode && <h4>{`${user.displayName}@${user.username}`}</h4>}
+        {inEditMode && (
+          <div className="mb-2">
+            <Input
+              value={user.displayName}
+              label={`Change Display Name for ${user.username}`}
+              onChange={onChangeDisplayName}
+            />
+          </div>
+        )}
+        {showEditButton && (
+          <button className="btn btn-outline-success" onClick={onClickEdit}>
+            <i className="fas fa-user-edit" /> Edit
+          </button>
+        )}
+
+        {inEditMode && (
+          <>
+            <ButtonWithProgress
+              className="btn btn-primary"
+              onClick={onClickSave}
+              text={
+                <>
+                  <i className="fas fa-save" /> Save
+                </>
+              }
+              pendingApiCall={pendingUpdateCall}
+              disabled={pendingUpdateCall}
+            />
+            <button
+              className="btn btn-outline-secondary ml-1"
+              onClick={onClickCancel}
+              disabled={pendingUpdateCall}
+            >
+              <i className="fas fa-window-close" /> Cancel
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
