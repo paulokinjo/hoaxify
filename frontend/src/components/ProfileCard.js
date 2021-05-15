@@ -12,6 +12,8 @@ const ProfileCard = ({
   onClickSave,
   onChangeDisplayName,
   pendingUpdateCall,
+  loadedImage,
+  onFileSelect,
 }) => {
   const showEditButton = isEditable && !inEditMode;
 
@@ -24,6 +26,7 @@ const ProfileCard = ({
           height="200"
           image={user.image}
           className="rounded-circle shadow"
+          src={loadedImage}
         />
       </div>
       <div className="card-body text-center">
@@ -34,6 +37,11 @@ const ProfileCard = ({
               value={user.displayName}
               label={`Change Display Name for ${user.username}`}
               onChange={onChangeDisplayName}
+            />
+            <input
+              type="file"
+              className="form-control-file mt-2"
+              onChange={onFileSelect}
             />
           </div>
         )}
